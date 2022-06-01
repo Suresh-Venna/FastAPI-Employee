@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from typing import Optional, List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
@@ -6,11 +6,10 @@ from sqlalchemy import Integer, String, Boolean, Float, Column
 from pydantic import BaseModel
 from fastapi.openapi.utils import get_openapi
 
-
-
 app = FastAPI()
 
-#Open API Documenation
+
+# Open API Documenation
 
 def employee_schema():
     openapi_schema = get_openapi(
@@ -19,13 +18,11 @@ def employee_schema():
         description="Coding Test for Interview",
         routes=app.routes
     )
-    app.openapi_schema =openapi_schema
+    app.openapi_schema = openapi_schema
     return app.openapi_schema
 
+
 app.openapi = employee_schema
-
-
-
 
 # sqlAlchemy
 
@@ -77,7 +74,7 @@ def create_employee(db: Session, employee: Employee):
     return db_employee
 
 
-@app.post('/employees/', response_model=Employee)
+@app.post('/employees/employee', response_model=Employee)
 def create_employees(employee: Employee, db: Session = Depends(get_db)):
     db_employee = create_employee(db, employee)
     return db_employee
@@ -87,6 +84,11 @@ def create_employees(employee: Employee, db: Session = Depends(get_db)):
 def get_employees_view(db: Session = Depends((get_db))):
     return get_employees(db)
 
-@app.get('/employees/{employee_id}')
-def get_employees_view(employee_id:int, db: Session = Depends(get_db)):
-    return get_employee(db, employee_id)
+
+@app.get('/employees/employee/{employee_id}')
+def get_employees_view(employee_id: int, db: Session = Depends(get_db)):
+    res = get_employee(db, employee_id)
+    if res:
+        return res
+    else:
+        raise HTTPException(status_code=404, detail="Item not found")
